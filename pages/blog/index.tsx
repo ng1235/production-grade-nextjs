@@ -2,7 +2,7 @@ import React from 'react'
 import { Pane, majorScale } from 'evergreen-ui'
 import matter from 'gray-matter'
 import path from 'path'
-import fs from 'fs'
+import fs from 'fs' // node inside the client react file. This is magical because nextjs removes all server side code that's used.
 import orderby from 'lodash.orderby'
 import Container from '../../components/container'
 import HomeNav from '../../components/homeNav'
@@ -30,6 +30,28 @@ const Blog = ({ posts }) => {
 
 Blog.defaultProps = {
   posts: [],
+}
+
+export function getStaticProps() {
+  const cmsPosts = postsFromCMS.published.map((post) => {
+    const { data } = matter(post)
+    return data
+  })
+  const postsPath = path.join(process.cwd(), 'posts')
+
+  const filenames = fs.readdirSync(postsPath)
+  const filePosts = filenames.map(name => {
+    const fullPath = path.join(process.cwd(), 'posts', name)
+    const file = fs.readFileSync(fullPath, 'utf-8')
+    const {data} = matter(file)
+    return data
+  })
+
+  const posts = [...cmsPosts, ...filePosts]
+
+  return {
+    props: { posts },
+  }
 }
 
 export default Blog
